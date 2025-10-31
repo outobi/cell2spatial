@@ -1,0 +1,412 @@
+---
+title: "Introduction to spatial2cell Package"
+author: "IPF Research Team"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to spatial2cell Package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+The `spatial2cell` package provides comprehensive tools for analyzing spatial transcriptomics data, with a particular focus on Idiopathic Pulmonary Fibrosis (IPF) research. This vignette demonstrates the key functions and workflows.
+
+## Installation
+
+```{r installation, eval=FALSE}
+# Install from GitHub (when available)
+devtools::install_github("your-username/spatial2cell")
+
+# Load the package
+library(spatial2cell)
+```
+
+```{r load-package}
+library(spatial2cell)
+```
+
+## Core Functions Overview
+
+The package includes several key functions:
+
+- `t_test_compare_cell()`: Cell type-specific differential expression with optional FDR correction
+- `wilcox_compare_region()`: Wilcoxon tests for region comparisons with rank-biserial correlation
+- `t_test_compare_region()`: t-tests for region comparisons with Cohen's d effect sizes
+- `calculate_signature_overlap()`: Gene set overlap enrichment analysis using hypergeometric test
+- `calculate_multiple_overlaps()`: Batch overlap analysis across multiple region comparisons
+- `calculate_signature_score()`: Calculate enrichment scores for gene signatures
+- `calculate_multiple_signature_scores()`: Batch signature scoring across multiple signatures
+
+### Multiple Testing Correction
+
+All statistical comparison functions support flexible multiple testing correction via the `correction_method` parameter:
+
+- **`"Nominal"`** (default): Returns unadjusted p-values
+- **`"BH"`**: Applies Benjamini-Hochberg FDR correction
+
+This gives you control over when and how to apply multiple testing correction.
+
+## Example 1: Wilcoxon Comparison
+
+Here's a simple example using simulated data:
+
+```{r wilcox-example}
+# Create simulated expression data
+set.seed(123)
+example_data <- data.frame(
+  expression = c(rnorm(50, 5, 1), rnorm(50, 6, 1)),
+  cell_type = rep(c("Fibroblasts", "Epithelial"), each = 50)
+)
+
+# Note: This example demonstrates the concept
+# The actual wilcox_compare_region function works with expression matrices
+# For a proper example, see Example 3: Region Comparison Analysis
+
+# Simulated comparison (conceptual)
+cat("Use wilcox_compare_region() for spatial region comparisons\n")
+cat("See Example 3 for complete working example\n")
+```
+
+## Example 2: Cell Type Analysis
+
+For more comprehensive cell type analysis:
+
+```{r cell-type-example}
+# Create simulated expression matrix
+set.seed(456)
+n_genes <- 100
+n_samples <- 50
+
+expression_matrix <- matrix(
+  rnorm(n_genes * n_samples), 
+  nrow = n_genes, 
+  ncol = n_samples
+)
+rownames(expression_matrix) <- paste0("Gene_", 1:n_genes)
+colnames(expression_matrix) <- paste0("Sample_", 1:n_samples)
+
+# Create metadata
+metadata <- data.frame(
+  celltype = rep(c("Fibroblasts", "Epithelial", "Immune"), c(20, 20, 10)),
+  Diagnosis = rep("IPF", n_samples),
+  row.names = colnames(expression_matrix)
+)
+
+# Perform cell type analysis with nominal p-values (default)
+cell_results <- t_test_compare_cell(
+  normalized_count = expression_matrix,
+  meta_data = metadata,
+  target_cell_type = "Fibroblasts",
+  diagnosis = "IPF",
+  correction_method = "Nominal"
+)
+
+# View top results
+head(cell_results[order(cell_results$stat.sig), ])
+
+# Alternative: Apply Benjamini-Hochberg FDR correction
+cell_results_fdr <- t_test_compare_cell(
+  normalized_count = expression_matrix,
+  meta_data = metadata,
+  target_cell_type = "Fibroblasts",
+  diagnosis = "IPF",
+  correction_method = "BH"
+)
+
+# Compare number of significant genes
+cat("Significant genes (nominal p < 0.05):", 
+    sum(cell_results$stat.sig < 0.05), "\n")
+cat("Significant genes (FDR < 0.05):", 
+    sum(cell_results_fdr$stat.sig < 0.05), "\n")
+```
+
+## Example 3: Region Comparison Analysis
+
+Compare gene expression between spatial regions using non-parametric or parametric tests:
+
+```{r region-comparison}
+# Create simulated spatial region data
+set.seed(567)
+n_genes <- 100
+n_samples <- 60
+
+region_expression <- matrix(
+  rnorm(n_genes * n_samples), 
+  nrow = n_genes, 
+  ncol = n_samples
+)
+rownames(region_expression) <- paste0("Gene_", 1:n_genes)
+colnames(region_expression) <- paste0("S", 1:n_samples)
+
+# Create sample metadata with regions
+region_metadata <- data.frame(
+  sample_id = paste0("S", 1:n_samples),
+  region_type = rep(c("foci", "alveoli", "fibrosis"), each = 20)
+)
+
+# Wilcoxon test with nominal p-values
+wilcox_results <- wilcox_compare_region(
+  expression_data = region_expression,
+  sample_metadata = region_metadata,
+  target_region = "foci",
+  correction_method = "Nominal"
+)
+
+head(wilcox_results[order(wilcox_results$p.value), ])
+
+# t-test with FDR correction
+ttest_results <- t_test_compare_region(
+  expression_data = region_expression,
+  sample_metadata = region_metadata,
+  target_region = "foci",
+  correction_method = "BH"
+)
+
+cat("\nTop genes from t-test (FDR corrected):\n")
+head(ttest_results[order(ttest_results$p.value), ])
+```
+
+## Example 4: Overlap Enrichment Analysis
+
+```{r overlap-example}
+# Create simulated gene lists for region-specific genes
+set.seed(789)
+all_genes <- paste0("Gene_", 1:1000)
+foci_genes <- sample(all_genes, 200)
+alveoli_genes <- sample(all_genes, 150)
+
+# Perform overlap enrichment between two region signatures
+overlap_result <- calculate_signature_overlap(
+  region_signature_genes = foci_genes,
+  query_signature_genes = alveoli_genes,
+  universe_size = length(all_genes)
+)
+
+# Print key results
+cat("Overlap count:", overlap_result$overlap, "\n")
+cat("P-value:", overlap_result$p.value, "\n")
+cat("Enrichment type:", overlap_result$enrichment_type, "\n")
+```
+
+## Example 5: Multiple Overlap Analysis
+
+For analyzing multiple region signatures:
+
+```{r multiple-overlap-example}
+# Create multiple region gene signatures
+region_signatures <- list(
+  foci = sample(all_genes, 150),
+  alveoli = sample(all_genes, 120),
+  fibrosis = sample(all_genes, 100)
+)
+
+reference_signature <- sample(all_genes, 200)
+
+# Perform multiple overlap analysis across regions
+multiple_results <- calculate_multiple_overlaps(
+  region_signature_list = region_signatures,
+  query_signature_genes = reference_signature,
+  universe_size = length(all_genes)
+)
+
+print(multiple_results)
+```
+
+## Typical Workflow
+
+Here's a typical analysis workflow:
+
+1. **Load and prepare data**
+2. **Perform cell type-specific analysis** for each cell type
+3. **Extract significant genes** based on statistical criteria
+4. **Perform overlap enrichment** between conditions
+5. **Apply FDR correction** for multiple testing
+6. **Visualize and interpret results**
+
+```{r workflow-example, eval=FALSE}
+# 1. Load your data
+# expression_data <- read.csv("your_expression_data.csv")
+# metadata <- read.csv("your_metadata.csv")
+
+# 2. Analyze each cell type
+cell_types <- unique(metadata$celltype)
+results_list <- list()
+
+for (ct in cell_types) {
+  # Option 1: Get nominal p-values for custom correction later
+  results_list[[ct]] <- t_test_compare_cell(
+    normalized_count = expression_data,
+    meta_data = metadata,
+    target_cell_type = ct,
+    diagnosis = "IPF",
+    correction_method = "Nominal"
+  )
+  
+  # Option 2: Apply FDR correction automatically
+  # results_list[[ct]] <- t_test_compare_cell(
+  #   normalized_count = expression_data,
+  #   meta_data = metadata,
+  #   target_cell_type = ct,
+  #   diagnosis = "IPF",
+  #   correction_method = "BH"
+  # )
+}
+
+# 3. Extract significant genes (example: p < 0.05)
+sig_genes_list <- lapply(results_list, function(x) {
+  significant <- x[x$stat.sig < 0.05, ]
+  return(significant$gene_id)
+})
+
+# 4. Compare with control genes
+control_genes <- get_control_genes()  # Your function to get control genes
+
+# 5. Perform enrichment analysis
+enrichment_results <- calculate_multiple_overlaps(
+  region_signature_list = sig_genes_list,
+  query_signature_genes = control_genes,
+  universe_size = nrow(expression_data)
+)
+
+# 6. Examine results - filter for significant overlaps
+sig_overlaps <- enrichment_results[enrichment_results$p.value < 0.05, ]
+print(sig_overlaps)
+```
+
+## Function Parameters
+
+### wilcox.comp() Parameters
+
+- `data`: Data frame with expression and grouping data
+- `group_var`: Column name for grouping variable
+- `target_group`: Specific group to compare
+- `expression_var`: Column name for expression values
+- `alternative`: Test alternative ("two.sided", "greater", "less")
+
+### t_test_compare_cell() Parameters
+
+- `normalized_count`: Expression matrix (genes × samples)
+- `meta_data`: Sample metadata data frame
+- `target_cell_type`: Cell type of interest
+- `diagnosis`: Diagnosis condition to analyze
+- `min_samples`: Minimum samples required (default: 3)
+- `correction_method`: Multiple testing correction - "Nominal" (default) or "BH"
+
+### wilcox_compare_region() Parameters
+
+- `expression_data`: Expression matrix (genes × samples)
+- `sample_metadata`: Sample metadata data frame
+- `target_region`: Target spatial region for comparison
+- `sample_col`: Sample ID column (optional)
+- `region_col`: Region type column (optional)
+- `correction_method`: Multiple testing correction - "Nominal" (default) or "BH"
+
+### t_test_compare_region() Parameters
+
+- `expression_data`: Expression matrix (genes × samples)
+- `sample_metadata`: Sample metadata data frame
+- `target_region`: Target spatial region for comparison
+- `sample_col`: Sample ID column (optional)
+- `region_col`: Region type column (optional)
+- `var_equal`: Assume equal variances (default: FALSE for Welch's t-test)
+- `correction_method`: Multiple testing correction - "Nominal" (default) or "BH"
+
+### calculate_signature_overlap() Parameters
+
+- `region_signature_genes`: Gene symbols from region-specific signature
+- `query_signature_genes`: Gene symbols from query signature  
+- `universe_size`: Total number of genes in background universe
+
+### calculate_multiple_overlaps() Parameters
+
+- `region_signature_list`: Named list of region gene signature vectors
+- `query_signature_genes`: Query signature gene symbols
+- `universe_size`: Total number of genes in background universe
+
+## Tips and Best Practices
+
+1. **Data Quality**: Ensure your expression data is properly normalized
+2. **Sample Size**: Use adequate sample sizes for reliable statistics
+3. **Multiple Testing Correction**: 
+   - Use `correction_method = "Nominal"` if you want to apply custom correction later
+   - Use `correction_method = "BH"` for automatic Benjamini-Hochberg FDR correction
+   - For exploratory analysis, consider using nominal p-values first
+4. **Effect Sizes**: Always report effect sizes (Cohen's d, rank-biserial) alongside p-values
+5. **Test Selection**:
+   - Use Wilcoxon tests for non-normal distributions or small sample sizes
+   - Use t-tests when assumptions of normality are met
+   - Welch's t-test (var_equal = FALSE) is more robust to unequal variances
+6. **Background Sets**: Use appropriate background gene sets for enrichment analysis
+7. **Validation**: Validate results with independent datasets when possible
+
+## Getting Help
+
+For more information about specific functions:
+
+```{r help-example, eval=FALSE}
+?t_test_compare_cell
+?wilcox_compare_region
+?t_test_compare_region
+?calculate_signature_overlap
+?calculate_signature_score
+```
+
+## Summary of All Package Functions
+
+### Statistical Comparison Functions
+
+| Function | Purpose | correction_method | Effect Size/Statistic |
+|----------|---------|-------------------|----------------------|
+| `t_test_compare_cell()` | Cell type differential expression (Welch's t-test) | "Nominal" or "BH" | Cohen's d |
+| `wilcox_compare_region()` | Non-parametric region comparison (Wilcoxon) | "Nominal" or "BH" | Rank-biserial correlation |
+| `t_test_compare_region()` | Parametric region comparison (t-test) | "Nominal" or "BH" | Cohen's d |
+
+### Overlap Enrichment Functions
+
+| Function | Purpose | Input | Output |
+|----------|---------|-------|--------|
+| `calculate_signature_overlap()` | Single overlap enrichment analysis | 2 gene lists + universe size | Hypergeometric p-value, overlap count |
+| `calculate_multiple_overlaps()` | Batch overlap analysis across regions | Multiple gene lists + query | Data frame with all comparisons |
+
+### Gene Signature Scoring Functions
+
+| Function | Purpose | Input | Output |
+|----------|---------|-------|--------|
+| `calculate_signature_score()` | Score single gene signature | Expression matrix + gene list | Enrichment scores per sample |
+| `calculate_multiple_signature_scores()` | Score multiple signatures at once | Expression matrix + signature list | Score matrix (samples × signatures) |
+| `query_signature_comprehensive()` | Comprehensive signature query | Expression matrix + signature + metadata | Detailed signature analysis |
+
+### Data Normalization Functions
+
+| Function | Purpose | Method | Output |
+|----------|---------|--------|--------|
+| `normalization_by_gene()` | Gene-wise normalization | Z-score transformation | Normalized expression matrix |
+| `normalize_expression()` | Matrix normalization | Z-score (default) or other methods | Normalized matrix |
+
+### Visualization Functions
+
+| Function | Purpose | Input | Output |
+|----------|---------|-------|--------|
+| `plot_signature_scores()` | Main signature visualization | Signature score matrix | ggplot2 bubble plot |
+| `plot_positive_signature()` | Visualize positive signatures | Signature score matrix | ggplot2 plot |
+| `plot_negative_signature()` | Visualize negative signatures | Signature score matrix | ggplot2 plot |
+
+### Helper/Internal Functions
+
+- `calculate_rank_biserial_correlation()` - Effect size for Wilcoxon test
+- `calculate_cohens_d()` - Effect size for t-test
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```
