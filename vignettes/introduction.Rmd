@@ -55,30 +55,131 @@ All statistical comparison functions support flexible multiple testing correctio
 
 This gives you control over when and how to apply multiple testing correction.
 
-## Example 1: Wilcoxon Comparison
+## Example 1: Basic data setup
 
-Here's a simple example using simulated data:
+Prepare your spatial transcriptomics data for analysis:
 
-```{r wilcox-example}
-# Create simulated expression data
+```{r data-setup}
+# Load example spatial transcriptomics data
+# In practice, load your GeoMx or other spatial data
+
+# Create example expression matrix
 set.seed(123)
-example_data <- data.frame(
-  expression = c(rnorm(50, 5, 1), rnorm(50, 6, 1)),
-  cell_type = rep(c("Fibroblasts", "Epithelial"), each = 50)
+n_genes <- 200
+n_roi <- 40
+
+spatial_expression <- matrix(
+  rnorm(n_genes * n_roi, mean = 5, sd = 2), 
+  nrow = n_genes, 
+  ncol = n_roi
+)
+rownames(spatial_expression) <- paste0("Gene_", 1:n_genes)
+colnames(spatial_expression) <- paste0("ROI_", 1:n_roi)
+
+# Create spatial metadata with region annotations
+spatial_metadata <- data.frame(
+  roi_id = paste0("ROI_", 1:n_roi),
+  region_type = rep(c("foci", "alveoli", "normal"), c(15, 15, 10)),
+  patient_id = rep(paste0("Patient_", 1:8), each = 5),
+  diagnosis = rep("IPF", n_roi)
 )
 
-# Note: This example demonstrates the concept
-# The actual wilcox_compare_region function works with expression matrices
-# For a proper example, see Example 3: Region Comparison Analysis
-
-# Simulated comparison (conceptual)
-cat("Use wilcox_compare_region() for spatial region comparisons\n")
-cat("See Example 3 for complete working example\n")
+# View data structure
+cat("Expression matrix dimensions:", dim(spatial_expression), "\n")
+head(spatial_metadata)
 ```
 
-## Example 2: Cell Type Analysis
+## Example 2: Region specific gene analysis
 
-For more comprehensive cell type analysis:
+Compare gene expression between spatial regions using non-parametric or parametric tests:
+
+```{r region-comparison}
+# Create simulated spatial region data
+set.seed(567)
+n_genes <- 100
+n_samples <- 60
+
+region_expression <- matrix(
+  rnorm(n_genes * n_samples), 
+  nrow = n_genes, 
+  ncol = n_samples
+)
+rownames(region_expression) <- paste0("Gene_", 1:n_genes)
+colnames(region_expression) <- paste0("S", 1:n_samples)
+
+# Create sample metadata with regions
+region_metadata <- data.frame(
+  sample_id = paste0("S", 1:n_samples),
+  region_type = rep(c("foci", "alveoli", "fibrosis"), each = 20)
+)
+
+# Wilcoxon test with nominal p-values
+wilcox_results <- wilcox_compare_region(
+  expression_data = region_expression,
+  sample_metadata = region_metadata,
+  target_region = "foci",
+  correction_method = "Nominal"
+)
+
+head(wilcox_results[order(wilcox_results$p.value), ])
+
+# t-test with FDR correction
+ttest_results <- t_test_compare_region(
+  expression_data = region_expression,
+  sample_metadata = region_metadata,
+  target_region = "foci",
+  correction_method = "BH"
+)
+
+cat("\nTop genes from t-test (FDR corrected):\n")
+head(ttest_results[order(ttest_results$p.value), ])
+```
+
+## Example 3: Query signature in single-cell data
+
+After identifying region-specific genes from spatial data, query their expression in single-cell data:
+
+```{r query-signature}
+# Use significant genes from region analysis as signature
+region_signature <- rownames(wilcox_results)[wilcox_results$p.value < 0.05]
+
+# Create simulated single-cell expression data
+set.seed(678)
+n_genes_sc <- 500
+n_cells <- 100
+
+sc_expression <- matrix(
+  rnorm(n_genes_sc * n_cells), 
+  nrow = n_genes_sc, 
+  ncol = n_cells
+)
+rownames(sc_expression) <- paste0("Gene_", 1:n_genes_sc)
+colnames(sc_expression) <- paste0("Cell_", 1:n_cells)
+
+# Create single-cell metadata
+sc_metadata <- data.frame(
+  cell_id = colnames(sc_expression),
+  cell_type = rep(c("Fibroblasts", "Epithelial", "Immune"), c(40, 40, 20))
+)
+
+# Calculate signature scores for each cell type
+signature_scores <- calculate_signature_score(
+  expression_data = sc_expression,
+  sample_metadata = sc_metadata,
+  signature_genes = region_signature
+)
+
+# View results
+head(signature_scores)
+
+# Compare scores across cell types
+cat("\nMean signature scores by cell type:\n")
+aggregate(score ~ cell_type, data = signature_scores, FUN = mean)
+```
+
+## Example 4: Cell type specific gene analysis
+
+Identify cell type-specific marker genes from single-cell data:
 
 ```{r cell-type-example}
 # Create simulated expression matrix
@@ -129,53 +230,9 @@ cat("Significant genes (FDR < 0.05):",
     sum(cell_results_fdr$stat.sig < 0.05), "\n")
 ```
 
-## Example 3: Region Comparison Analysis
+## Example 5: Overlap enrichment analysis
 
-Compare gene expression between spatial regions using non-parametric or parametric tests:
-
-```{r region-comparison}
-# Create simulated spatial region data
-set.seed(567)
-n_genes <- 100
-n_samples <- 60
-
-region_expression <- matrix(
-  rnorm(n_genes * n_samples), 
-  nrow = n_genes, 
-  ncol = n_samples
-)
-rownames(region_expression) <- paste0("Gene_", 1:n_genes)
-colnames(region_expression) <- paste0("S", 1:n_samples)
-
-# Create sample metadata with regions
-region_metadata <- data.frame(
-  sample_id = paste0("S", 1:n_samples),
-  region_type = rep(c("foci", "alveoli", "fibrosis"), each = 20)
-)
-
-# Wilcoxon test with nominal p-values
-wilcox_results <- wilcox_compare_region(
-  expression_data = region_expression,
-  sample_metadata = region_metadata,
-  target_region = "foci",
-  correction_method = "Nominal"
-)
-
-head(wilcox_results[order(wilcox_results$p.value), ])
-
-# t-test with FDR correction
-ttest_results <- t_test_compare_region(
-  expression_data = region_expression,
-  sample_metadata = region_metadata,
-  target_region = "foci",
-  correction_method = "BH"
-)
-
-cat("\nTop genes from t-test (FDR corrected):\n")
-head(ttest_results[order(ttest_results$p.value), ])
-```
-
-## Example 4: Overlap Enrichment Analysis
+Test enrichment between region-specific and cell type-specific gene signatures:
 
 ```{r overlap-example}
 # Create simulated gene lists for region-specific genes
@@ -197,7 +254,7 @@ cat("P-value:", overlap_result$p.value, "\n")
 cat("Enrichment type:", overlap_result$enrichment_type, "\n")
 ```
 
-## Example 5: Multiple Overlap Analysis
+## Example 6: Multiple overlap analysis
 
 For analyzing multiple region signatures:
 
@@ -221,66 +278,6 @@ multiple_results <- calculate_multiple_overlaps(
 print(multiple_results)
 ```
 
-## Typical Workflow
-
-Here's a typical analysis workflow:
-
-1. **Load and prepare data**
-2. **Perform cell type-specific analysis** for each cell type
-3. **Extract significant genes** based on statistical criteria
-4. **Perform overlap enrichment** between conditions
-5. **Apply FDR correction** for multiple testing
-6. **Visualize and interpret results**
-
-```{r workflow-example, eval=FALSE}
-# 1. Load your data
-# expression_data <- read.csv("your_expression_data.csv")
-# metadata <- read.csv("your_metadata.csv")
-
-# 2. Analyze each cell type
-cell_types <- unique(metadata$celltype)
-results_list <- list()
-
-for (ct in cell_types) {
-  # Option 1: Get nominal p-values for custom correction later
-  results_list[[ct]] <- t_test_compare_cell(
-    normalized_count = expression_data,
-    meta_data = metadata,
-    target_cell_type = ct,
-    diagnosis = "IPF",
-    correction_method = "Nominal"
-  )
-  
-  # Option 2: Apply FDR correction automatically
-  # results_list[[ct]] <- t_test_compare_cell(
-  #   normalized_count = expression_data,
-  #   meta_data = metadata,
-  #   target_cell_type = ct,
-  #   diagnosis = "IPF",
-  #   correction_method = "BH"
-  # )
-}
-
-# 3. Extract significant genes (example: p < 0.05)
-sig_genes_list <- lapply(results_list, function(x) {
-  significant <- x[x$stat.sig < 0.05, ]
-  return(significant$gene_id)
-})
-
-# 4. Compare with control genes
-control_genes <- get_control_genes()  # Your function to get control genes
-
-# 5. Perform enrichment analysis
-enrichment_results <- calculate_multiple_overlaps(
-  region_signature_list = sig_genes_list,
-  query_signature_genes = control_genes,
-  universe_size = nrow(expression_data)
-)
-
-# 6. Examine results - filter for significant overlaps
-sig_overlaps <- enrichment_results[enrichment_results$p.value < 0.05, ]
-print(sig_overlaps)
-```
 
 ## Function Parameters
 
