@@ -1,8 +1,5 @@
 # cell2spatial
 
-[![R build status](https://github.com/outobi/cell2spatial/workflows/R-CMD-check/badge.svg)](https://github.com/your-username/cell2spatial/actions)
-[![CRAN status](https://www.r-pkg.org/badges/version/cell2spatial)](https://CRAN.R-project.org/package=cell2spatial)
-
 ## Overview
 
 cell2spatial is an R package designed for comprehensive multiomics integrative analysis of spatial transcriptomics and single cell transcriptomics data to infer relative cell type enrichment in a histopathological region, with a focus on Idiopathic Pulmonary Fibrosis (IPF) research. It is also a powerful modality-agonist integration method that can combine LC/MS spatial proteomics with single cell transcriptomics. The package provides tools for region/cell type specific gene/protein extraction, query expression scoring analysis, overlap enrichment analysis and statistical comparisons. It can be smoothly expanded to other disease indications with spatial heterogeity. 
@@ -449,10 +446,9 @@ From `calculate_signature_overlap()`:
   - = 1: No enrichment
 
 **Example Interpretation**:
-```
-overlap = 45, p.value = 1.2e-10, enrichment_type = "enriched", fold_enrichment = 3.2
-```
-"45 genes are shared between signatures, which is 3.2 times more than expected by chance (p = 1.2e-10). This indicates strong biological overlap."
+
+"overlap = 45, p.value = 1.2e-10, enrichment_type = "enriched", fold_enrichment = 3.2
+45 genes are shared between signatures, which is 3.2 times more than expected by chance (p = 1.2e-10). This indicates strong biological overlap."
 
 ---
 
