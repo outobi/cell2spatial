@@ -279,7 +279,7 @@ print(multiple_results)
 ```
 
 
-## Function Parameters test
+## Function Parameters
 
 ### wilcox.comp() Parameters
 
