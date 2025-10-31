@@ -1,10 +1,10 @@
 ---
-title: "Introduction to spatial2cell Package"
+title: "Introduction to cell2spatial Package"
 author: "IPF Research Team"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to spatial2cell Package}
+  %\VignetteIndexEntry{Introduction to cell2spatial Package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,20 +18,20 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-The `spatial2cell` package provides comprehensive tools for analyzing spatial transcriptomics data, with a particular focus on Idiopathic Pulmonary Fibrosis (IPF) research. This vignette demonstrates the key functions and workflows.
+The `cell2spatial` package provides comprehensive tools for analyzing spatial transcriptomics data, with a particular focus on Idiopathic Pulmonary Fibrosis (IPF) research. This vignette demonstrates the key functions and workflows.
 
 ## Installation
 
 ```{r installation, eval=FALSE}
 # Install from GitHub (when available)
-devtools::install_github("your-username/spatial2cell")
+devtools::install_github("your-username/cell2spatial")
 
 # Load the package
-library(spatial2cell)
+library(cell2spatial)
 ```
 
 ```{r load-package}
-library(spatial2cell)
+library(cell2spatial)
 ```
 
 ## Core Functions Overview

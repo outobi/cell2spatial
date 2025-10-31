@@ -1,4 +1,4 @@
-Package: SpatialTranscriptomics
+Package: cell2spatial
 Type: Package
 Title: Spatial Transcriptomics Analysis for IPF Research
 Version: 0.1.0

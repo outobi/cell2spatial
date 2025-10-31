@@ -1,11 +1,11 @@
-# spatial2cell
+# cell2spatial
 
-[![R build status](https://github.com/your-username/spatial2cell/workflows/R-CMD-check/badge.svg)](https://github.com/your-username/spatial2cell/actions)
-[![CRAN status](https://www.r-pkg.org/badges/version/spatial2cell)](https://CRAN.R-project.org/package=spatial2cell)
+[![R build status](https://github.com/ut/cell2spatial/workflows/R-CMD-check/badge.svg)](https://github.com/your-username/cell2spatial/actions)
+[![CRAN status](https://www.r-pkg.org/badges/version/cell2spatial)](https://CRAN.R-project.org/package=cell2spatial)
 
 ## Overview
 
-spatial2cell is an R package designed for comprehensive multiomics integrative analysis of spatial transcriptomics/proteomics and single cell transcriptomics data to infer relative cell type enrichment in a histopathological region, with a focus on Idiopathic Pulmonary Fibrosis (IPF) research. It is a powerful modality-agonist integration method that can combine LC/MS spatial proteomics with single cell transcriptomics. The package provides tools for region/cell type specific gene extraction, query expression scoring analysis, overlap enrichment analysis and statistical comparisons. It can be smoothly expanded to other disease indications with spatial heterogeity. 
+cell2spatial is an R package designed for comprehensive multiomics integrative analysis of spatial transcriptomics/proteomics and single cell transcriptomics data to infer relative cell type enrichment in a histopathological region, with a focus on Idiopathic Pulmonary Fibrosis (IPF) research. It is a powerful modality-agonist integration method that can combine LC/MS spatial proteomics with single cell transcriptomics. The package provides tools for region/cell type specific gene extraction, query expression scoring analysis, overlap enrichment analysis and statistical comparisons. It can be smoothly expanded to other disease indications with spatial heterogeity. 
 
 ## Key Features
 
@@ -28,8 +28,11 @@ spatial2cell is an R package designed for comprehensive multiomics integrative a
 ### Development Version
 
 ```r
-# Install from GitHub
-devtools::install_github("outobi/spatial2cell")
+# Install devtools if you haven't already
+install.packages("devtools")
+
+# Install cell2spatial from GitHub
+devtools::install_github("outobi/cell2spatial")
 ```
 
 ### Dependencies
@@ -44,7 +47,7 @@ install.packages(c("dplyr", "rstatix", "readxl", "rio", "ggplot2",
 ## Quick Start
 
 ```r
-library(spatial2cell)
+library(cell2spatial)
 
 # Example: Cell type-specific analysis with nominal p-values
 cell_analysis <- t_test_compare_cell(normalized_count = count_data,
@@ -136,7 +139,6 @@ region_ttest <- t_test_compare_region(expression_data = expr_data,
 **Use Case**: 
 - Comparing region-specific gene signatures and cell-type specific gene signatures (e.g., do fibroblast cells enriched in foci areas)
 
-
 **Method**: Hypergeometric test (Fisher's exact test for enrichment) with fold enrichment calculation.
 
 **Output**: Single row data frame with:
@@ -155,9 +157,9 @@ region_ttest <- t_test_compare_region(expression_data = expr_data,
 ---
 
 #### `calculate_multiple_overlaps()`
-**Purpose**: Batch process overlap enrichment for multiple gene signatures against a reference signature.
+**Purpose**: Batch process overlap enrichment for multiple cell type specific gene signatures against a region specific gene signature.
 
-**Use Case**: Compare multiple region-specific signatures against a single reference (e.g., testing multiple spatial regions against a single-cell marker gene set).
+**Use Case**: Compare multiple region-specific signatures against a single reference (e.g., testing multiple cell markers against a region gene set).
 
 **Output**: Data frame with one row per comparison, including all statistics from `calculate_signature_overlap()`.
 
@@ -169,17 +171,16 @@ region_ttest <- t_test_compare_region(expression_data = expr_data,
 **Purpose**: Calculate enrichment scores for a gene signature across samples based on expression levels.
 
 **Use Case**: 
-- Scoring single-cell-derived signatures in spatial data
-- Calculating pathway activity scores
+- Scoring single-cell-derived signatures in region specific gene set
 - Quantifying cell type abundance in spatial regions
 
 **Method**: 
-1. Subset expression matrix to signature genes
+1. Subset expression matrix to region signature genes
 2. Calculate z-scores if not already normalized
-3. Compute mean z-score across signature genes for each sample
-4. Return enrichment score per sample
+3. Compute mean z-score across all cells in the cell type for each region
+4. Return enrichment score per cell type
 
-**Output**: Named numeric vector of enrichment scores (one per sample).
+**Output**: Named numeric vector of enrichment scores (one per cell type for each region).
 
 **Interpretation**: 
 - Positive scores: Signature is up-regulated
@@ -189,7 +190,7 @@ region_ttest <- t_test_compare_region(expression_data = expr_data,
 ---
 
 #### `calculate_multiple_signature_scores()`
-**Purpose**: Score multiple gene signatures simultaneously across all samples.
+**Purpose**: Score multiple region gene signatures simultaneously across all cell types.
 
 **Use Case**: Efficiently calculate scores for many cell type signatures at once (e.g., scoring all 31 cell types from single-cell atlas).
 
@@ -291,7 +292,7 @@ epithelial_signature <- c("EPCAM", "CDH1", "KRT8", "KRT18")
 
 ## Complete Analysis Workflow
 
-This section demonstrates a typical spatial2cell analysis pipeline from data loading to result visualization.
+This section demonstrates a typical cell2spatial analysis pipeline from data loading to result visualization.
 
 ### Workflow Overview
 1. **Load and prepare data** - Import expression matrices and metadata
@@ -303,7 +304,7 @@ This section demonstrates a typical spatial2cell analysis pipeline from data loa
 ### Step-by-Step Example
 
 ```r
-library(spatial2cell)
+library(cell2spatial)
 library(rio)  # For Excel export
 
 # Load your data
@@ -666,12 +667,12 @@ Comprehensive documentation is available for all functions:
 ?calculate_signature_score
 
 # View package vignettes
-browseVignettes("spatial2cell")
+browseVignettes("cell2spatial")
 ```
 
 ## Citation
 
-If you use spatial2cell in your research, please cite:
+If you use cell2spatial in your research, please cite:
 
 ```
 Wang, F., Jin, L., Wang, X., Cui, B., Yang, Y., Duggan, L., Schwartz Sterman, A., Lloyd, S. M., Hazelwood, L. A., Chaudhary, N., Bawa, B., Phillips, L. A., He, Y., & Tian, Y. (2025). Novel Integration of Spatial and Single-Cell Omics Data Sets Enables Deeper Insights into IPF Pathogenesis. Proteomes, 13(1), 3. https://doi.org/10.3390/proteomes13010003
@@ -687,7 +688,7 @@ Contributions are welcome! Feel free to fork the repository and submit pull requ
 
 ## Issues
 
-Please report bugs and feature requests at: https://github.com/outobi/spatial2cell/issues
+Please report bugs and feature requests at: https://github.com/outobi/cell2spatial/issues
 
 ## Development
 
